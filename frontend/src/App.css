@@ -1,0 +1,26 @@
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f4f7fc;
+  font-family: Arial, sans-serif;
+}
+
+.container {
+  text-align: center;
+  padding-top: 100px;
+}
+
+h1 {
+  color: #2563eb;
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+p {
+  color: #555;
+  font-size: 1.2rem;
+}
