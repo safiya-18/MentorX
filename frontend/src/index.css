@@ -10,13 +10,41 @@
 }
 
 @layer base {
+  :root {
+    --bg-primary: #f8fafc;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --card-bg: rgba(255, 255, 255, 0.7);
+    --card-border: rgba(255, 255, 255, 0.5);
+  }
+
+  :root.dark {
+    --bg-primary: #0f172a;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --card-bg: rgba(30, 41, 59, 0.7);
+    --card-border: rgba(255, 255, 255, 0.1);
+  }
+
+  :root.theme-blue {
+    --bg-primary: #eff6ff;
+    --text-primary: #1e3a8a;
+    --text-secondary: #3b82f6;
+    --card-bg: rgba(219, 234, 254, 0.7);
+    --card-border: rgba(255, 255, 255, 0.6);
+  }
+
   body {
-    @apply bg-slate-50 text-slate-900 font-sans antialiased selection:bg-mentorBlue-500 selection:text-white;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    @apply font-sans antialiased selection:bg-mentorBlue-500 selection:text-white transition-colors duration-300;
   }
 }
 
 @layer utilities {
   .glass-card {
-    @apply bg-white/70 backdrop-blur-md border border-white/50 shadow-sm rounded-2xl;
+    background-color: var(--card-bg);
+    border-color: var(--card-border);
+    @apply backdrop-blur-md border shadow-sm rounded-2xl transition-colors duration-300;
   }
 }
