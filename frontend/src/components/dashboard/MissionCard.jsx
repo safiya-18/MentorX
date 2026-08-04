@@ -1,22 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { FiCheckCircle, FiCircle, FiList } from 'react-icons/fi';
 
-const tasks = [
-  { id: 1, title: 'Complete Data Structures Graph Theory Module', completed: false, category: 'Study' },
-  { id: 2, title: 'Solve 20 PYQs from Algorithms', completed: true, category: 'Practice' },
-  { id: 3, title: 'Revise Engineering Mathematics Notes', completed: false, category: 'Revision' },
-];
-
-const MissionCard = () => {
-  const [missionTasks, setMissionTasks] = useState(tasks);
-
-  const toggleTask = (id) => {
-    setMissionTasks(missionTasks.map(task => 
-      task.id === id ? { ...task, completed: !task.completed } : task
-    ));
-  };
-
+const MissionCard = ({ tasks, toggleTask }) => {
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
@@ -29,12 +15,12 @@ const MissionCard = () => {
           <FiList className="text-mentorBlue-500" /> Today's Mission
         </h2>
         <span className="text-xs font-medium text-slate-500">
-          {missionTasks.filter(t => t.completed).length} / {missionTasks.length} Done
+          {tasks.filter(t => t.completed).length} / {tasks.length} Done
         </span>
       </div>
 
       <div className="flex-grow space-y-3">
-        {missionTasks.map((task, index) => (
+        {tasks.map((task, index) => (
           <motion.div 
             key={task.id}
             initial={{ opacity: 0, x: -10 }}

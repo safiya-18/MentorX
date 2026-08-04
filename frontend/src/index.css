@@ -1,6 +1,13 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-mentorBlue-50: #f0f9ff;
+  --color-mentorBlue-100: #e0f2fe;
+  --color-mentorBlue-500: #0ea5e9;
+  --color-mentorBlue-600: #0284c7;
+  --color-mentorBlue-900: #0c4a6e;
+  --font-sans: "Inter", sans-serif;
+}
 
 @layer base {
   body {
