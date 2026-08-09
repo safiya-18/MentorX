@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FiTarget, FiCheck } from 'react-icons/fi';
 import Confetti from 'react-confetti';
-import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { useFirestoreSingleton } from '../../hooks/useFirestoreSingleton';
 import toast from 'react-hot-toast';
 
 const DailyGoalCard = () => {
-  const [goal, setGoal] = useLocalStorage('dailyGoal', { text: '', completed: false, date: new Date().toDateString() });
-  const [inputValue, setInputValue] = useState(goal.text);
+  const [goal, setGoal] = useFirestoreSingleton('dailyGoal', 'dailyGoal', { text: '', completed: false, date: new Date().toDateString() });
+  const [inputValue, setInputValue] = useState(goal.text || '');
   const [showConfetti, setShowConfetti] = useState(false);
 
   // Reset goal if it's a new day

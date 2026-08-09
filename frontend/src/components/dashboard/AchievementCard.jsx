@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { FiAward } from 'react-icons/fi';
-import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { useFirestoreSingleton } from '../../hooks/useFirestoreSingleton';
 
 const achievementsList = [
   { id: 'streak_7', title: '7 Day Streak', icon: '🔥', description: 'Study for 7 consecutive days' },
@@ -11,7 +11,7 @@ const achievementsList = [
 ];
 
 const AchievementCard = () => {
-  const [unlocked, setUnlocked] = useLocalStorage('achievements', ['pomodoro_1']);
+  const [unlocked] = useFirestoreSingleton('achievements', 'achievements', { list: ['pomodoro_1'] });
 
   return (
     <motion.div 
@@ -26,7 +26,7 @@ const AchievementCard = () => {
 
       <div className="grid grid-cols-2 gap-3 flex-grow">
         {achievementsList.map((achievement, index) => {
-          const isUnlocked = unlocked.includes(achievement.id);
+          const isUnlocked = (unlocked.list || []).includes(achievement.id);
           return (
             <motion.div 
               key={achievement.id}

@@ -1,15 +1,28 @@
 import React from 'react';
-import { FiSearch, FiBell, FiSettings } from 'react-icons/fi';
+import { FiSearch, FiBell, FiSettings, FiLogOut } from 'react-icons/fi';
 import { motion } from 'framer-motion';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
+import { logoutUser } from '../../services/authService';
+import toast from 'react-hot-toast';
 
 const Navbar = () => {
+  const navigate = useNavigate();
   const navItems = [
     { name: 'Dashboard', path: '/' },
     { name: 'Planner', path: '/planner' },
     { name: 'Analytics', path: '/analytics' },
     { name: 'Notes', path: '/notes' },
   ];
+
+  const handleLogout = async () => {
+    const { error } = await logoutUser();
+    if (error) {
+      toast.error(error);
+    } else {
+      toast.success("Logged out successfully");
+      navigate('/login');
+    }
+  };
 
   return (
     <nav className="sticky top-0 z-50 glass-card mx-4 mt-4 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -56,6 +69,9 @@ const Navbar = () => {
             <FiSettings size={20} />
           </motion.button>
         </Link>
+        <motion.button onClick={handleLogout} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="hover:text-red-500 transition-colors" title="Logout">
+          <FiLogOut size={20} />
+        </motion.button>
         <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-white shadow-sm cursor-pointer hover:border-mentorBlue-100 transition-colors">
           <img 
             src="https://api.dicebear.com/7.x/notionists/svg?seed=Safiya&backgroundColor=e0f2fe" 

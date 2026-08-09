@@ -2,35 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiTrash2, FiSearch, FiFileText } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
-import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { useFirestoreCollection } from '../../hooks/useFirestoreCollection';
 import toast from 'react-hot-toast';
 
 const RichNotesCard = () => {
-  const [notes, setNotes] = useLocalStorage('mentorxNotes', [
+  const { items: notes, addItem, updateItem, deleteItem } = useFirestoreCollection('mentorxNotes', 'notes', [
     { id: 1, title: 'Welcome to MentorX Notes', content: '# Welcome\nHere you can write your study notes using **Markdown**.\n\n- Support for lists\n- *Italics*\n- `code blocks`', date: new Date().toISOString() }
   ]);
   const [activeNoteId, setActiveNoteId] = useState(notes[0]?.id || null);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Create a new note
-  const handleAddNote = () => {
+  const handleAddNote = async () => {
     const newNote = {
-      id: Date.now(),
       title: 'Untitled Note',
       content: '',
       date: new Date().toISOString()
     };
-    setNotes([newNote, ...notes]);
-    setActiveNoteId(newNote.id);
+    const newId = await addItem(newNote);
+    setActiveNoteId(newId);
+    toast.success("New note created");
   };
 
   // Delete a note
-  const handleDeleteNote = (id, e) => {
+  const handleDeleteNote = async (id, e) => {
     e.stopPropagation();
-    const newNotes = notes.filter(n => n.id !== id);
-    setNotes(newNotes);
+    await deleteItem(id);
     if (activeNoteId === id) {
-      setActiveNoteId(newNotes.length > 0 ? newNotes[0].id : null);
+      setActiveNoteId(notes.length > 1 ? notes.find(n => n.id !== id)?.id : null);
     }
     toast.success("Note deleted");
   };
@@ -38,11 +36,9 @@ const RichNotesCard = () => {
   const activeNote = notes.find(n => n.id === activeNoteId);
 
   // Auto-save update
-  const handleUpdateNote = (field, value) => {
+  const handleUpdateNote = async (field, value) => {
     if (!activeNoteId) return;
-    setNotes(notes.map(n => 
-      n.id === activeNoteId ? { ...n, [field]: value, date: new Date().toISOString() } : n
-    ));
+    await updateItem(activeNoteId, { [field]: value, date: new Date().toISOString() });
   };
 
   const filteredNotes = notes.filter(n => 

@@ -6,6 +6,10 @@ import Planner from './pages/Planner';
 import Analytics from './pages/Analytics';
 import Notes from './pages/Notes';
 import Settings from './pages/Settings';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import ProtectedRoute from './components/layout/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
 import { useTheme } from './hooks/useTheme';
 
 function App() {
@@ -13,18 +17,26 @@ function App() {
   useTheme();
 
   return (
-    <>
+    <AuthProvider>
       <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/planner" element={<Planner />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/notes" element={<Notes />} />
-          <Route path="/settings" element={<Settings />} />
-        </Routes>
-      </Layout>
-    </>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/*" element={
+          <ProtectedRoute>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/planner" element={<Planner />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/notes" element={<Notes />} />
+                <Route path="/settings" element={<Settings />} />
+              </Routes>
+            </Layout>
+          </ProtectedRoute>
+        } />
+      </Routes>
+    </AuthProvider>
   );
 }
 

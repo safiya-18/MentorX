@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiX } from 'react-icons/fi';
-import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { useFirestoreCollection } from '../../hooks/useFirestoreCollection';
 import toast from 'react-hot-toast';
 
 const initialSessions = [
@@ -9,7 +9,7 @@ const initialSessions = [
 ];
 
 const StudyPlannerCard = () => {
-  const [sessions, setSessions] = useLocalStorage('studySessions', initialSessions);
+  const { items: sessions, addItem, updateItem, deleteItem } = useFirestoreCollection('studySessions', 'studySessions', initialSessions);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
   
@@ -18,18 +18,18 @@ const StudyPlannerCard = () => {
   const subjects = ['DBMS', 'Operating Systems', 'Computer Networks', 'DSA', 'Aptitude'];
   const priorities = ['Low', 'Medium', 'High'];
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.topic || !formData.date) {
       toast.error("Please fill required fields");
       return;
     }
     
     if (editingId) {
-      setSessions(sessions.map(s => s.id === editingId ? { ...formData, id: editingId } : s));
+      await updateItem(editingId, formData);
       setEditingId(null);
       toast.success("Session updated!");
     } else {
-      setSessions([...sessions, { ...formData, id: Date.now() }]);
+      await addItem(formData);
       toast.success("Session added!");
     }
     
@@ -43,20 +43,18 @@ const StudyPlannerCard = () => {
     setIsAdding(true);
   };
 
-  const handleDelete = (id) => {
-    setSessions(sessions.filter(s => s.id !== id));
+  const handleDelete = async (id) => {
+    await deleteItem(id);
     toast.success("Session deleted");
   };
 
-  const toggleStatus = (id) => {
-    setSessions(sessions.map(s => {
-      if (s.id === id) {
-        const newStatus = s.status === 'Completed' ? 'Pending' : 'Completed';
-        if (newStatus === 'Completed') toast.success("Task completed! 🎉");
-        return { ...s, status: newStatus };
-      }
-      return s;
-    }));
+  const toggleStatus = async (id) => {
+    const session = sessions.find(s => s.id === id);
+    if (session) {
+      const newStatus = session.status === 'Completed' ? 'Pending' : 'Completed';
+      await updateItem(id, { status: newStatus });
+      if (newStatus === 'Completed') toast.success("Task completed! 🎉");
+    }
   };
 
   return (

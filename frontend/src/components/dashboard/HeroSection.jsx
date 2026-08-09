@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useFirestoreSingleton } from '../../hooks/useFirestoreSingleton';
 
 const HeroSection = () => {
   const currentDate = new Date().toLocaleDateString('en-US', {
@@ -7,6 +8,13 @@ const HeroSection = () => {
     month: 'long',
     day: 'numeric',
   });
+
+  const [profile] = useFirestoreSingleton('mentorxProfile', 'settings', { name: 'Safiya' });
+
+  const hour = new Date().getHours();
+  let greeting = 'Good Evening';
+  if (hour < 12) greeting = 'Good Morning';
+  else if (hour < 18) greeting = 'Good Afternoon';
 
   return (
     <motion.div 
@@ -18,7 +26,7 @@ const HeroSection = () => {
       <div>
         <p className="text-mentorBlue-600 font-medium text-sm mb-1">{currentDate}</p>
         <h1 className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight mb-2">
-          Good Evening, Safiya <span className="inline-block origin-[70%_70%] animate-[wave_2s_ease-in-out_infinite]">👋</span>
+          {greeting}, {profile?.name || 'Safiya'} <span className="inline-block origin-[70%_70%] animate-[wave_2s_ease-in-out_infinite]">👋</span>
         </h1>
         <p className="text-slate-500 max-w-lg">
           "The future depends on what you do today." — Mahatma Gandhi

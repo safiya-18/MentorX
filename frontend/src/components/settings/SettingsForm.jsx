@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiUser, FiCalendar, FiClock, FiTarget, FiMonitor, FiSave, FiSettings } from 'react-icons/fi';
-import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { useFirestoreSingleton } from '../../hooks/useFirestoreSingleton';
 import { useTheme } from '../../hooks/useTheme';
 import toast from 'react-hot-toast';
 
 const SettingsForm = () => {
-  const [profile, setProfile] = useLocalStorage('mentorxProfile', {
+  const [profile, setProfile] = useFirestoreSingleton('mentorxProfile', 'settings', {
     name: 'Safiya',
     examDate: '2027-02-01',
     pomodoroDuration: 25,
@@ -16,12 +16,25 @@ const SettingsForm = () => {
   const [theme, setTheme] = useTheme();
 
   const [formData, setFormData] = useState({
-    name: profile.name,
-    examDate: profile.examDate,
-    pomodoroDuration: profile.pomodoroDuration,
-    dailyGoalCount: profile.dailyGoalCount,
+    name: profile?.name || 'Safiya',
+    examDate: profile?.examDate || '2027-02-01',
+    pomodoroDuration: profile?.pomodoroDuration || 25,
+    dailyGoalCount: profile?.dailyGoalCount || 5,
     theme: theme
   });
+
+  useEffect(() => {
+    if (profile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFormData(prev => ({
+        ...prev,
+        name: profile.name || prev.name,
+        examDate: profile.examDate || prev.examDate,
+        pomodoroDuration: profile.pomodoroDuration || prev.pomodoroDuration,
+        dailyGoalCount: profile.dailyGoalCount || prev.dailyGoalCount
+      }));
+    }
+  }, [profile]);
 
   const handleSave = () => {
     setProfile({

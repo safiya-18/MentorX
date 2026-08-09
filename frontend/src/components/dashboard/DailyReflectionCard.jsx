@@ -1,21 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { FiEdit3 } from 'react-icons/fi';
+import { useFirestoreSingleton } from '../../hooks/useFirestoreSingleton';
 
 const DailyReflectionCard = () => {
-  const [reflection, setReflection] = useState("");
-
-  useEffect(() => {
-    const savedReflection = localStorage.getItem('dailyReflection');
-    if (savedReflection) {
-      setReflection(savedReflection);
-    }
-  }, []);
+  const [reflection, setReflection] = useFirestoreSingleton('dailyReflection', 'dailyReflection', { text: '' });
 
   const handleChange = (e) => {
-    const val = e.target.value;
-    setReflection(val);
-    localStorage.setItem('dailyReflection', val);
+    setReflection({ text: e.target.value });
   };
 
   return (
@@ -32,7 +24,7 @@ const DailyReflectionCard = () => {
       
       <div className="flex-grow">
         <textarea 
-          value={reflection}
+          value={reflection.text !== undefined ? reflection.text : (typeof reflection === 'string' ? reflection : '')}
           onChange={handleChange}
           placeholder="What did you learn today?"
           className="w-full h-full min-h-[120px] p-4 bg-slate-50/50 border border-slate-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-mentorBlue-300 focus:border-transparent text-slate-700 text-sm transition-all"

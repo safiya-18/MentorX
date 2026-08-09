@@ -26,20 +26,6 @@ const PomodoroTimer = () => {
     setTimerState({ timeLeft, mode, isActive });
   }, [timeLeft, mode, isActive, setTimerState]);
 
-  useEffect(() => {
-    let interval = null;
-    if (isActive && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (isActive && timeLeft === 0) {
-      clearInterval(interval);
-      setIsActive(false);
-      handleComplete();
-    }
-    return () => clearInterval(interval);
-  }, [isActive, timeLeft]);
-
   const handleComplete = () => {
     if (audioRef.current) {
       audioRef.current.play().catch(e => console.log('Audio play failed:', e));
@@ -55,6 +41,22 @@ const PomodoroTimer = () => {
       setTimeLeft(FOCUS_TIME);
     }
   };
+
+  useEffect(() => {
+    let interval = null;
+    if (isActive && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (isActive && timeLeft === 0) {
+      clearInterval(interval);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsActive(false);
+      handleComplete();
+    }
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive, timeLeft]);
 
   const toggleTimer = () => setIsActive(!isActive);
 

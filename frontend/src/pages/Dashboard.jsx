@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import HeroSection from '../components/dashboard/HeroSection';
 import CountdownCard from '../components/dashboard/CountdownCard';
 import MissionCard from '../components/dashboard/MissionCard';
@@ -10,6 +10,7 @@ import DailyGoalCard from '../components/dashboard/DailyGoalCard';
 import PomodoroTimer from '../components/timer/PomodoroTimer';
 import SubjectProgressCard from '../components/dashboard/SubjectProgressCard';
 import AchievementCard from '../components/dashboard/AchievementCard';
+import { useFirestoreCollection } from '../hooks/useFirestoreCollection';
 
 const initialTasks = [
   { id: 1, title: 'Complete Data Structures Graph Theory Module', completed: false, category: 'Study' },
@@ -18,12 +19,13 @@ const initialTasks = [
 ];
 
 const Dashboard = () => {
-  const [tasks, setTasks] = useState(initialTasks);
+  const { items: tasks, updateItem } = useFirestoreCollection('tasks', 'tasks', initialTasks);
 
-  const toggleTask = (id) => {
-    setTasks(tasks.map(task => 
-      task.id === id ? { ...task, completed: !task.completed } : task
-    ));
+  const toggleTask = async (id) => {
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+      await updateItem(id, { completed: !task.completed });
+    }
   };
 
   return (
