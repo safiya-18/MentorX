@@ -11,6 +11,7 @@ import PomodoroTimer from '../components/timer/PomodoroTimer';
 import SubjectProgressCard from '../components/dashboard/SubjectProgressCard';
 import AchievementCard from '../components/dashboard/AchievementCard';
 import AIRecommendationCard from '../components/dashboard/AIRecommendationCard';
+import AIDailyMissionCard from '../components/dashboard/AIDailyMissionCard';
 
 const initialTasks = [
   { id: 1, title: 'Complete Data Structures Graph Theory Module', completed: false, category: 'Study' },
@@ -58,7 +59,8 @@ const Dashboard = () => {
         <div className="lg:col-span-1">
           <CountdownCard />
         </div>
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 flex flex-col">
+          <AIDailyMissionCard tasks={tasks} />
           <MissionCard tasks={tasks} toggleTask={toggleTask} />
         </div>
       </div>
