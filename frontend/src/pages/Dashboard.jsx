@@ -12,6 +12,7 @@ import SubjectProgressCard from '../components/dashboard/SubjectProgressCard';
 import AchievementCard from '../components/dashboard/AchievementCard';
 import AIRecommendationCard from '../components/dashboard/AIRecommendationCard';
 import AIDailyMissionCard from '../components/dashboard/AIDailyMissionCard';
+import AIWeakTopicCard from '../components/dashboard/AIWeakTopicCard';
 
 const initialTasks = [
   { id: 1, title: 'Complete Data Structures Graph Theory Module', completed: false, category: 'Study' },
@@ -65,15 +66,18 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Row 5: Subjects, Progress, Motivation */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-1">
+      {/* Row 5: Subjects, Progress, Motivation, Weak Topic */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="md:col-span-1 lg:col-span-1">
           <SubjectProgressCard />
         </div>
-        <div className="md:col-span-1">
+        <div className="md:col-span-1 lg:col-span-1">
+          <AIWeakTopicCard tasks={tasks} />
+        </div>
+        <div className="md:col-span-1 lg:col-span-1">
           <WeeklyProgressCard tasks={tasks} />
         </div>
-        <div className="md:col-span-1">
+        <div className="md:col-span-1 lg:col-span-1">
           <DailyMotivationCard />
         </div>
       </div>
