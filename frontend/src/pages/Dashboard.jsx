@@ -10,6 +10,7 @@ import DailyGoalCard from '../components/dashboard/DailyGoalCard';
 import PomodoroTimer from '../components/timer/PomodoroTimer';
 import SubjectProgressCard from '../components/dashboard/SubjectProgressCard';
 import AchievementCard from '../components/dashboard/AchievementCard';
+import AIRecommendationCard from '../components/dashboard/AIRecommendationCard';
 
 const initialTasks = [
   { id: 1, title: 'Complete Data Structures Graph Theory Module', completed: false, category: 'Study' },
@@ -30,6 +31,11 @@ const Dashboard = () => {
     <>
       {/* Row 1: Hero */}
       <HeroSection />
+
+      {/* Row 1.5: AI Insight */}
+      <div className="grid grid-cols-1 gap-6 mb-6">
+        <AIRecommendationCard tasks={tasks} />
+      </div>
 
       {/* Row 2: Statistics */}
       <StatisticsSection tasks={tasks} />
