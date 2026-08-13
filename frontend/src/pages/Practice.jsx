@@ -9,6 +9,8 @@ const Practice = () => {
     score: 0,
     totalAttempted: 0,
   });
+  // eslint-disable-next-line no-unused-vars
+  const [practiceHistory, setPracticeHistory] = useLocalStorage('practiceHistory', []);
 
   const [availableTopics, setAvailableTopics] = useState(['General GATE Practice']);
   const [selectedTopic, setSelectedTopic] = useState('General GATE Practice');
@@ -145,6 +147,24 @@ Rules:
       totalAttempted: prev.totalAttempted + 1,
       score: isCorrect ? prev.score + 1 : prev.score
     }));
+
+    const newAttempt = {
+      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+      topic: selectedTopic,
+      question: currentQuestion.question,
+      userAnswer: currentQuestion.options[selectedOption],
+      correctAnswer: currentQuestion.options[currentQuestion.correctIndex],
+      isCorrect,
+      timestamp: new Date().toISOString()
+    };
+
+    setPracticeHistory(prev => {
+      const updated = [...(prev || []), newAttempt];
+      if (updated.length > 200) {
+        return updated.slice(updated.length - 200);
+      }
+      return updated;
+    });
   };
 
   const handleRestart = () => {

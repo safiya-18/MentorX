@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiAlertTriangle, FiRefreshCw, FiAlertCircle } from 'react-icons/fi';
+import { FiAlertTriangle, FiRefreshCw, FiAlertCircle, FiBook } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 const AIWeakTopicCard = ({ tasks }) => {
+  const navigate = useNavigate();
   const [analysis, setAnalysis] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -164,9 +166,31 @@ Data:
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="prose prose-sm dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 font-medium leading-relaxed bg-orange-50/50 dark:bg-slate-900/50 p-4 rounded-xl border border-orange-100/50 dark:border-slate-700/50"
+            className="flex flex-col h-full"
           >
-            <ReactMarkdown>{analysis}</ReactMarkdown>
+            <div className="prose prose-sm dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 font-medium leading-relaxed bg-orange-50/50 dark:bg-slate-900/50 p-4 rounded-xl border border-orange-100/50 dark:border-slate-700/50 mb-4">
+              <ReactMarkdown>{analysis}</ReactMarkdown>
+            </div>
+            
+            <button
+              onClick={() => {
+                let extractedTopic = "";
+                const lines = analysis.split('\n');
+                const topicLine = lines.find(l => l.toLowerCase().includes('topic'));
+                if (topicLine) {
+                  extractedTopic = topicLine.replace(/^(?:\d+\.|\*\*|Topic:|\s|-)+/ig, '').replace(/\*\*$/g, '').trim();
+                }
+                
+                if (extractedTopic) {
+                  navigate(`/revision?topic=${encodeURIComponent(extractedTopic)}`);
+                } else {
+                  navigate('/revision');
+                }
+              }}
+              className="mt-auto w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold transition-colors flex items-center justify-center gap-2"
+            >
+              <FiBook /> Revise Weak Topic
+            </button>
           </motion.div>
         ) : (
           <div className="flex items-center justify-center h-full min-h-[120px] text-sm text-slate-500 dark:text-slate-400 italic text-center p-4">
