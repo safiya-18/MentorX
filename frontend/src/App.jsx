@@ -8,6 +8,7 @@ import Notes from './pages/Notes';
 import Settings from './pages/Settings';
 import Mentor from './pages/Mentor';
 import Practice from './pages/Practice';
+import Strategy from './pages/Strategy';
 import { useTheme } from './hooks/useTheme';
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
           <Route path="/notes" element={<Notes />} />
           <Route path="/mentor" element={<Mentor />} />
           <Route path="/practice" element={<Practice />} />
+          <Route path="/strategy" element={<Strategy />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </Layout>
