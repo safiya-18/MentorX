@@ -11,6 +11,7 @@ const Navbar = () => {
     { name: 'Notes', path: '/notes' },
     { name: 'Practice', path: '/practice' },
     { name: 'Strategy', path: '/strategy' },
+    { name: 'Revision Notes', path: '/revision' },
     { name: 'AI Mentor', path: '/mentor' },
   ];
 

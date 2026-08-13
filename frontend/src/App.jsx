@@ -9,6 +9,7 @@ import Settings from './pages/Settings';
 import Mentor from './pages/Mentor';
 import Practice from './pages/Practice';
 import Strategy from './pages/Strategy';
+import Revision from './pages/Revision';
 import { useTheme } from './hooks/useTheme';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
           <Route path="/mentor" element={<Mentor />} />
           <Route path="/practice" element={<Practice />} />
           <Route path="/strategy" element={<Strategy />} />
+          <Route path="/revision" element={<Revision />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </Layout>
