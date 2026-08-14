@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiRefreshCw, FiCheckCircle, FiXCircle, FiBookOpen, FiAlertCircle } from 'react-icons/fi';
+import { FiRefreshCw, FiCheckCircle, FiXCircle, FiBookOpen, FiAlertCircle, FiTarget } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
@@ -21,27 +21,62 @@ const Practice = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const [recommendedTopics, setRecommendedTopics] = useState([]);
+  const [weakTopicContextMap, setWeakTopicContextMap] = useState({});
+
   useEffect(() => {
+    let topicsSet = new Set(['General GATE Practice']);
+    
     // Load topics from study sessions
     try {
       const sessionsStr = localStorage.getItem('studySessions');
       if (sessionsStr) {
         const sessions = JSON.parse(sessionsStr);
-        const topics = new Set(['General GATE Practice']);
         sessions.forEach(s => {
           if (s.subject && s.topic) {
-            topics.add(`${s.subject} - ${s.topic}`);
+            topicsSet.add(`${s.subject} - ${s.topic}`);
           } else if (s.subject) {
-            topics.add(s.subject);
+            topicsSet.add(s.subject);
           }
         });
-        setTimeout(() => {
-          setAvailableTopics(Array.from(topics));
-        }, 0);
       }
     } catch (e) {
       console.warn('Could not parse study sessions for topics', e);
     }
+
+    // Load AI Analytics
+    let recs = [];
+    let weakMap = {};
+    try {
+      const analyticsStr = localStorage.getItem('aiAnalyticsReport');
+      if (analyticsStr) {
+        const analytics = JSON.parse(analyticsStr);
+        if (analytics.topicPerformance && Array.isArray(analytics.topicPerformance)) {
+          // Filter weak topics
+          let weakTopics = analytics.topicPerformance.filter(t => t.status === 'Weak');
+          
+          // Parse accuracy number for sorting
+          const parseAcc = (str) => parseInt(str.replace(/[^0-9]/g, '')) || 0;
+          
+          weakTopics.sort((a, b) => parseAcc(a.accuracy) - parseAcc(b.accuracy));
+          
+          recs = weakTopics.slice(0, 3);
+          
+          recs.forEach(t => {
+            weakMap[t.topic] = t;
+            topicsSet.add(t.topic);
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Could not parse aiAnalyticsReport', e);
+    }
+
+    setTimeout(() => {
+      setAvailableTopics(Array.from(topicsSet));
+      setRecommendedTopics(recs);
+      setWeakTopicContextMap(weakMap);
+    }, 0);
   }, []);
 
   const generateQuestion = async () => {
@@ -55,6 +90,17 @@ const Practice = () => {
       let promptTopicContext = selectedTopic === 'General GATE Practice' 
         ? 'General GATE exam topics' 
         : `the specific topic: ${selectedTopic}`;
+
+      const weakContext = weakTopicContextMap[selectedTopic];
+      if (weakContext) {
+        promptTopicContext += `\n\nThe student has demonstrated weakness in this topic based on previous practice:
+Topic: ${weakContext.topic}
+Accuracy: ${weakContext.accuracy}
+Attempts: ${weakContext.attempts}
+Advice: ${weakContext.advice}
+
+Generate a targeted practice question that tests the student's understanding of this weak area. Prefer conceptual/application questions. Do not make it unnecessarily trivial.`;
+      }
 
       const promptText = `You are MentorX, an AI study mentor for a GATE aspirant.
 Generate ONE highly relevant multiple-choice practice question for ${promptTopicContext}.
@@ -204,6 +250,54 @@ Rules:
       </div>
 
       <div className="glass-card p-6">
+        {(!currentQuestion && !isLoading) && (
+          <div className="mb-8 p-5 bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 rounded-xl">
+            <div className="flex items-center gap-2 mb-4">
+              <FiTarget className="text-indigo-600 dark:text-indigo-400" size={20} />
+              <h3 className="font-bold text-lg text-indigo-900 dark:text-indigo-300">Adaptive Practice</h3>
+              {recommendedTopics.length > 0 && (
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full ml-auto">
+                  {recommendedTopics.length} weak {recommendedTopics.length === 1 ? 'topic' : 'topics'} detected
+                </span>
+              )}
+            </div>
+            
+            {recommendedTopics.length > 0 ? (
+              <>
+                <p className="text-sm text-indigo-800/80 dark:text-indigo-200/80 mb-4 font-medium">
+                  Based on your recent practice performance, you should focus on:
+                </p>
+                <div className="flex flex-col gap-3">
+                  {recommendedTopics.map((t, i) => (
+                    <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-800/80 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800/30 shadow-sm">
+                      <div>
+                        <h4 className="font-bold text-slate-800 dark:text-slate-100">{t.topic}</h4>
+                        <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 mt-1">
+                          {t.accuracy} accuracy • {t.attempts} attempts
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setSelectedTopic(t.topic)}
+                        className={`px-4 py-2 rounded-md text-sm font-bold transition-colors shrink-0 ${
+                          selectedTopic === t.topic 
+                            ? 'bg-indigo-600 text-white shadow-sm' 
+                            : 'bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/50 dark:hover:bg-indigo-800 text-indigo-700 dark:text-indigo-300'
+                        }`}
+                      >
+                        {selectedTopic === t.topic ? 'Selected' : 'Practice Weak Topic'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-indigo-800/70 dark:text-indigo-300/70 font-medium italic">
+                Keep practicing to unlock adaptive recommendations.
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="mb-6 flex flex-col md:flex-row gap-4 items-end">
           <div className="flex-grow w-full">
             <label className="block text-sm font-semibold text-slate-800 dark:text-slate-200 mb-2">
