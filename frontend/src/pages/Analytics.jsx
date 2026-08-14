@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FiRefreshCw, FiBarChart2, FiAward, FiTarget, FiTrendingUp, FiAlertCircle } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import AnalyticsCards from '../components/analytics/AnalyticsCards';
 import ChartsSection from '../components/analytics/ChartsSection';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 const Analytics = () => {
+  const navigate = useNavigate();
   const [aiReport, setAiReport] = useLocalStorage('aiAnalyticsReport', null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -17,6 +19,7 @@ const Analytics = () => {
     try {
       let sessions = [];
       let practice = { score: 0, totalAttempted: 0 };
+      let practiceHistory = [];
       let profile = {};
 
       try {
@@ -25,6 +28,9 @@ const Analytics = () => {
 
         const pStr = localStorage.getItem('practiceSession');
         if (pStr) practice = JSON.parse(pStr);
+
+        const phStr = localStorage.getItem('practiceHistory');
+        if (phStr) practiceHistory = JSON.parse(phStr);
 
         const profStr = localStorage.getItem('mentorxProfile');
         if (profStr) profile = JSON.parse(profStr);
@@ -44,6 +50,27 @@ const Analytics = () => {
         daysUntilExam = days > 0 ? days : "Exam passed";
       }
 
+      // Aggregate practice history by topic
+      const topicStats = {};
+      practiceHistory.forEach(attempt => {
+        if (!attempt.topic) return;
+        if (!topicStats[attempt.topic]) {
+          topicStats[attempt.topic] = { total: 0, correct: 0 };
+        }
+        topicStats[attempt.topic].total++;
+        if (attempt.isCorrect) {
+          topicStats[attempt.topic].correct++;
+        }
+      });
+
+      const topicSummary = Object.keys(topicStats).map(topic => {
+        const stat = topicStats[topic];
+        const acc = Math.round((stat.correct / stat.total) * 100);
+        return `${topic}: ${acc}% (${stat.correct}/${stat.total})`;
+      });
+
+      const topicSummaryStr = topicSummary.length > 0 ? topicSummary.join('\n      - ') : 'No practice history yet.';
+
       const contextStr = `
       Student Profile:
       - Target Exam: ${profile.targetExam || 'GATE'}
@@ -54,9 +81,12 @@ const Analytics = () => {
       - Completed Sessions: ${totalCompleted}
       - Pending Sessions: ${totalPending}
       
-      Practice History:
+      Practice History Overall:
       - Total Attempted: ${practice.totalAttempted}
       - Accuracy: ${practiceAccuracy}%
+      
+      Topic-Level Practice Accuracy:
+      - ${topicSummaryStr}
       `;
 
       const promptText = `You are a GATE CS exam mentor. Analyze the student's progress data below and generate a realistic AI Performance and Exam Readiness Report.
@@ -65,14 +95,23 @@ const Analytics = () => {
 
       IMPORTANT RULES:
       1. If the student has zero completed sessions and zero practice, welcome them and provide a "Getting Started" analysis with a low readiness score (e.g. 0-10).
-      2. Provide actionable strategic advice based on their accuracy and volume.
-      3. Return exactly and ONLY valid JSON matching this schema (do NOT wrap in markdown \`\`\`json):
+      2. If there is no practice history, topicPerformance should be an empty array [].
+      3. Avoid false weakness: topics with very few attempts (e.g., 1 or 2) should not automatically be flagged as Weak unless accuracy is abysmal.
+      4. Provide actionable strategic advice based on accuracy and volume.
+      5. Return exactly and ONLY valid JSON matching this schema (do NOT wrap in markdown \`\`\`json):
       {
-        "readinessScore": 45, // Number between 0 and 100
-        "readinessLabel": "Needs Improvement", // Short string
-        "consistencyAnalysis": "Analysis of their study volume vs goals...",
-        "strengths": ["Strength 1", "Strength 2"], // Array of strings
-        "areasForImprovement": ["Area 1", "Area 2"], // Array of strings
+        "readinessScore": 45,
+        "readinessLabel": "Needs Improvement",
+        "overallAnalysis": "Analysis of their consistency and overall accuracy...",
+        "topicPerformance": [
+          {
+            "topic": "Operating Systems - Deadlocks",
+            "status": "Weak", // Strictly "Weak" | "Moderate" | "Strong"
+            "accuracy": "33%",
+            "attempts": 3,
+            "advice": "Review Banker's Algorithm."
+          }
+        ],
         "strategicAdvice": "Your main focus this week should be..."
       }`;
 
@@ -108,13 +147,18 @@ const Analytics = () => {
       if (
         typeof parsed.readinessScore !== 'number' ||
         !parsed.readinessLabel ||
-        !parsed.consistencyAnalysis ||
-        !Array.isArray(parsed.strengths) ||
-        !Array.isArray(parsed.areasForImprovement) ||
+        !parsed.overallAnalysis ||
+        !Array.isArray(parsed.topicPerformance) ||
         !parsed.strategicAdvice
       ) {
         throw new Error("The AI response was missing required fields.");
       }
+
+      parsed.topicPerformance.forEach(tp => {
+        if (!tp.topic || typeof tp.status !== 'string' || typeof tp.accuracy !== 'string' || typeof tp.attempts !== 'number' || !tp.advice) {
+          throw new Error("The AI returned an invalid topic performance object.");
+        }
+      });
 
       setAiReport(parsed);
     } catch (err) {
@@ -181,7 +225,7 @@ const Analytics = () => {
               <div className="w-3 h-3 rounded-full bg-mentorBlue-600 dark:bg-mentorBlue-400 animate-bounce" style={{ animationDelay: '0.4s' }} />
             </div>
             <p className="font-bold text-lg text-slate-900 dark:text-slate-100">Analyzing performance...</p>
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mt-2">Evaluating consistency and practice accuracy.</p>
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mt-2">Evaluating consistency and topic accuracy.</p>
           </div>
         )}
 
@@ -213,13 +257,13 @@ const Analytics = () => {
                 <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mt-1 uppercase tracking-wider">Readiness Score</p>
               </div>
 
-              {/* Consistency & Advice */}
+              {/* Overall Analysis & Advice */}
               <div className="md:col-span-2 glass-card p-6 bg-white dark:bg-slate-800/90 border-slate-300 dark:border-slate-700 flex flex-col justify-center">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-2">
-                  <FiTrendingUp className="text-mentorBlue-600 dark:text-mentorBlue-400" /> Consistency Analysis
+                  <FiTrendingUp className="text-mentorBlue-600 dark:text-mentorBlue-400" /> Overall Analysis
                 </h3>
                 <p className="text-slate-700 dark:text-slate-200 font-medium leading-relaxed mb-6">
-                  {aiReport.consistencyAnalysis}
+                  {aiReport.overallAnalysis}
                 </p>
                 
                 <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-2">
@@ -231,36 +275,78 @@ const Analytics = () => {
               </div>
             </div>
 
-            {/* Strengths & Weaknesses */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="glass-card p-6 bg-emerald-50 dark:bg-slate-800/90 border-emerald-200 dark:border-emerald-800/60">
-                <h3 className="text-lg font-bold text-emerald-900 dark:text-emerald-300 mb-4 border-b border-emerald-200 dark:border-emerald-800/60 pb-2">
-                  Core Strengths
-                </h3>
-                <ul className="space-y-3">
-                  {aiReport.strengths.map((str, idx) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 mt-2 shrink-0"></span>
-                      <span className="text-slate-900 dark:text-slate-100 font-semibold">{str}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {/* Topic Performance */}
+            <div className="glass-card p-6 md:p-8 bg-white dark:bg-slate-800/90 border-slate-300 dark:border-slate-700">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
+                <span>🎯</span> Topic Performance Breakdown
+              </h3>
+              
+              {aiReport.topicPerformance && aiReport.topicPerformance.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {aiReport.topicPerformance.map((tp, idx) => {
+                    const isWeak = tp.status === 'Weak';
+                    const isStrong = tp.status === 'Strong';
+                    
+                    let bgClass;
+                    let statusColor;
+                    
+                    if (isWeak) {
+                      bgClass = "bg-rose-50/50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-800/30";
+                      statusColor = "text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800 font-bold bg-rose-100/50 dark:bg-rose-900/20";
+                    } else if (isStrong) {
+                      bgClass = "bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800/30";
+                      statusColor = "text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 font-bold bg-emerald-100/50 dark:bg-emerald-900/20";
+                    } else {
+                      statusColor = "text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 font-bold bg-amber-100/50 dark:bg-amber-900/20";
+                      bgClass = "bg-amber-50/50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800/30";
+                    }
 
-              <div className="glass-card p-6 bg-rose-50 dark:bg-slate-800/90 border-rose-200 dark:border-rose-800/60">
-                <h3 className="text-lg font-bold text-rose-900 dark:text-rose-300 mb-4 border-b border-rose-200 dark:border-rose-800/60 pb-2">
-                  Areas for Improvement
-                </h3>
-                <ul className="space-y-3">
-                  {aiReport.areasForImprovement.map((area, idx) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 dark:bg-rose-400 mt-2 shrink-0"></span>
-                      <span className="text-slate-900 dark:text-slate-100 font-semibold">{area}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                    return (
+                      <div key={idx} className={`p-5 rounded-xl border flex flex-col h-full ${bgClass} transition-colors`}>
+                        <div className="flex justify-between items-start mb-3 gap-3">
+                          <h4 className="font-bold text-lg text-slate-800 dark:text-slate-100 leading-tight">
+                            {tp.topic}
+                          </h4>
+                          <span className={`text-xs px-2.5 py-1 rounded-md border shrink-0 ${statusColor}`}>
+                            {tp.status}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400 font-semibold mb-4 bg-white/60 dark:bg-black/20 p-2 rounded-lg border border-slate-200/50 dark:border-slate-700/50">
+                          <div><span className="text-slate-800 dark:text-slate-200">{tp.accuracy}</span> Acc</div>
+                          <div className="w-px h-4 bg-slate-300 dark:bg-slate-600"></div>
+                          <div><span className="text-slate-800 dark:text-slate-200">{tp.attempts}</span> Att</div>
+                        </div>
+                        
+                        <p className="text-sm text-slate-700 dark:text-slate-300 mb-5 flex-grow font-medium leading-relaxed">
+                          {tp.advice}
+                        </p>
+                        
+                        {isWeak && (
+                          <button
+                            onClick={() => navigate(`/revision?topic=${encodeURIComponent(tp.topic)}`)}
+                            className="mt-auto w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-sm transition-colors shadow-sm flex items-center justify-center gap-2"
+                          >
+                            <FiTarget size={16} /> Revise Topic
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-8 text-center border border-dashed border-slate-300 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                  <div className="w-12 h-12 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <FiAward className="text-slate-500 dark:text-slate-400" size={24} />
+                  </div>
+                  <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-1">No Topic Data Yet</h4>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">
+                    Keep practicing! Complete more practice sessions to unlock AI topic analysis.
+                  </p>
+                </div>
+              )}
             </div>
+
           </motion.div>
         )}
       </div>
