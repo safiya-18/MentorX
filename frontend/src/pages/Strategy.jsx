@@ -5,6 +5,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 
 const Strategy = () => {
   const [weeklyStrategy, setWeeklyStrategy] = useLocalStorage('weeklyStrategy', null);
+  const [aiReport] = useLocalStorage('aiAnalyticsReport', null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [examContext, setExamContext] = useState(null);
@@ -35,12 +36,17 @@ const Strategy = () => {
       let sessions = [];
       let profile = {};
       
+      let analyticsReport = null;
+      
       try {
         const sessionsStr = localStorage.getItem('studySessions');
         if (sessionsStr) sessions = JSON.parse(sessionsStr);
         
         const profileStr = localStorage.getItem('mentorxProfile');
         if (profileStr) profile = JSON.parse(profileStr);
+
+        const analyticsStr = localStorage.getItem('aiAnalyticsReport');
+        if (analyticsStr) analyticsReport = JSON.parse(analyticsStr);
       } catch (e) {
         console.warn("Failed to gather local data", e);
       }
@@ -72,6 +78,17 @@ const Strategy = () => {
         contextStr += `- None recorded.\n`;
       }
 
+      if (analyticsReport && analyticsReport.topicPerformance && analyticsReport.topicPerformance.length > 0) {
+        const weak = analyticsReport.topicPerformance.filter(t => t.status === 'Weak');
+        const moderate = analyticsReport.topicPerformance.filter(t => t.status === 'Moderate');
+        const strong = analyticsReport.topicPerformance.filter(t => t.status === 'Strong');
+
+        contextStr += `\nEmpirical Practice Performance (CRITICAL FOR ADAPTIVE STRATEGY):\n`;
+        if (weak.length) contextStr += `- Weak Topics: ${weak.map(t => `${t.topic} (Acc: ${t.accuracy}, ${t.attempts} att) - ${t.advice}`).join(' | ')}\n`;
+        if (moderate.length) contextStr += `- Moderate Topics: ${moderate.map(t => `${t.topic} (${t.accuracy})`).join(', ')}\n`;
+        if (strong.length) contextStr += `- Strong Topics: ${strong.map(t => `${t.topic} (${t.accuracy})`).join(', ')}\n`;
+      }
+
       const promptText = `You are MentorX, an AI study mentor. Analyze the provided student data and generate a realistic Weekly Study Strategy for the next 7 days.
       
 ${contextStr}
@@ -81,8 +98,10 @@ IMPORTANT RULES:
 2. Incorporate the "Existing Pending Work" into the schedule and mark their source as "Existing backlog".
 3. Provide AI-suggested revision or practice tasks and mark their source as "AI suggestion".
 4. Do NOT claim an AI suggestion already exists in the student's data.
-5. Keep the workload realistic. Respect the expected daily sessions.
-6. You MUST return ONLY valid JSON in the exact structure below, with no markdown formatting or extra text outside the JSON.
+5. EMPIRICAL WEAKNESS PRIORITY: You MUST schedule "Weak Topics" (if any are listed) with the highest priority as Revision/Practice tasks. Do not ignore weak topics.
+6. Strong topics should receive lighter revision/PYQ work instead of consuming most of the week.
+7. Keep the workload realistic. Respect the expected daily sessions.
+8. You MUST return ONLY valid JSON in the exact structure below, with no markdown formatting or extra text outside the JSON.
 
 {
   "weekGoal": "Main objective for the week",
@@ -180,9 +199,17 @@ Do NOT wrap the response in \`\`\`json blocks. Return raw JSON.`;
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2">
             <span>🗓️</span> AI Weekly Study Strategy
           </h1>
-          <p className="text-slate-700 dark:text-slate-200 mt-1">
-            Your personalized 7-day master plan based on current progress.
-          </p>
+          <div className="flex flex-col gap-2 mt-1">
+            <p className="text-slate-700 dark:text-slate-200">
+              Your personalized 7-day master plan based on current progress.
+            </p>
+            {aiReport && aiReport.topicPerformance && aiReport.topicPerformance.length > 0 && (
+              <div className="flex items-center gap-2 text-[11px] sm:text-xs font-bold text-mentorBlue-700 dark:text-mentorBlue-300 bg-mentorBlue-50/80 dark:bg-mentorBlue-900/30 border border-mentorBlue-200 dark:border-mentorBlue-800/50 w-fit px-2.5 py-1 rounded-md shadow-sm">
+                <FiTarget size={12} className="shrink-0" />
+                <span>Strategy adapted from practice performance ({aiReport.topicPerformance.filter(t => t.status === 'Weak').length} weak topics detected)</span>
+              </div>
+            )}
+          </div>
         </div>
         
         <div className="flex items-center gap-3 w-full md:w-auto">
