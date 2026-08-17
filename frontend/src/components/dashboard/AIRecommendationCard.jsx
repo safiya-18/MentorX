@@ -83,10 +83,16 @@ Data:
   };
 
   useEffect(() => {
+    let timeoutId;
     // Only fetch automatically on the first mount if we have tasks or sessions
     if (!hasFetched && tasks.length > 0) {
-      fetchRecommendation();
+      timeoutId = setTimeout(() => {
+        fetchRecommendation();
+      }, 0);
     }
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -106,19 +106,26 @@ Data:
   };
 
   useEffect(() => {
+    let timeoutId;
+    let fallbackTimeoutId;
+
     if (!hasFetched) {
       const hasData = tasks.length > 0 || localStorage.getItem('studySessions');
       if (hasData) {
-        // Defer execution to avoid synchronous setState within the effect body
-        setTimeout(() => {
+        timeoutId = setTimeout(() => {
           fetchWeakTopic();
-        }, 0);
+        }, 3000);
       } else {
-        setTimeout(() => {
+        fallbackTimeoutId = setTimeout(() => {
           setHasFetched(true);
         }, 0);
       }
     }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (fallbackTimeoutId) clearTimeout(fallbackTimeoutId);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -84,12 +84,15 @@ Data:
   };
 
   useEffect(() => {
+    let timeoutId;
     if (!hasFetched && tasks.length > 0) {
-      // Defer execution to avoid synchronous setState within the effect body
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         fetchMission();
-      }, 0);
+      }, 1500);
     }
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
